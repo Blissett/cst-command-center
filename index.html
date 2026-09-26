@@ -309,6 +309,8 @@ const CT='America/Chicago';
 const tCT=(iso,o={hour:'numeric',minute:'2-digit'})=>iso?new Date(iso).toLocaleString('en-US',{timeZone:CT,...o}):'-';
 const dCT=iso=>iso?new Date(iso).toLocaleString('en-US',{timeZone:CT,weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}):'-';
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// One-tap link (operator's choice, 2026-09-26): the token may arrive in the address after '#t='. It is saved in this browser and removed from the address bar; the '#' part is never sent to any server.
+(()=>{ const m=location.hash.match(/[#&]t=([^&]+)/); if(m){ store.set('cst_view_token',decodeURIComponent(m[1])); history.replaceState(null,'',location.pathname+location.search); } })();
 let token=store.get('cst_view_token')||'', timer=null, lastOk=0, D=null, focus=store.get('cst_focus')||'SPY', tf=store.get('cst_tf')||'3M', lastSeq=0;
 let mode=store.get('cst_mode')||'plain';
 
