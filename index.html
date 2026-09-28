@@ -173,7 +173,7 @@ body.plain #feedcard,body.plain #wealthcard{grid-column:span 6}
 body.plain .today .line{font-size:22px}
 body.plain .ring .word{font-size:22px}
 body.plain{font-size:15px}
-</style><link rel="stylesheet" href="owner-guide.css"></head>
+</style><link rel="stylesheet" href="owner-guide.css"><link rel="stylesheet" href="daily-workflow.css"></head>
 <body>
 <header>
   <div class="logo"><svg viewBox="0 0 32 32" aria-label="CST"><rect width="32" height="32" rx="8" fill="#0f1a22" stroke="#2a3749"/><path d="M8 21 L14 13 L19 18 L24 10" stroke="#34d399" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="10" r="2.2" fill="#34d399"/></svg>
@@ -545,4 +545,4 @@ $('l-done').onclick=()=>{ const n=String(L.lessons[li]?.n); if(done.has(n)) done
 renderLesson();
 window.addEventListener('resize',()=>{ if(D){ calc(); renderKpis(D,D.state||{},D.broker,D.positions||[],(D.pending||[]).filter(p=>!p.expired)); } });
 load();
-</script><script src="orientation.js"></script><script src="owner-guide.js"></script></body></html>
+</script><script src="orientation.js"></script><script src="owner-guide.js"></script><script src="daily-workflow.js"></script></body></html>

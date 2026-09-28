@@ -33,6 +33,21 @@ The [dashboard](https://blissett.github.io/cst-command-center/) hides Indicators
 
 ## A simple daily routine
 
+### Follow the guided daily workflow
+
+Select **Start daily workflow** at the top of the dashboard. Unlike **Tour the dashboard**, this is a six-step review with explicit branches, acknowledgment checkboxes and stop paths.
+
+1. **Confirm account and freshness:** Read the displayed account, Paper environment, state publication, last scan and ledger verification timestamps. Use **Show System details**, then **Return to daily workflow**. Continue only after checking the intended account and whether the timestamps are suitable for the review; missing required evidence blocks progression.
+2. **Review existing exposure:** Use **Show positions and orders** and **Show Engine log**. Match positions, waiting orders and actual protection against your broker screen, then acknowledge the check.
+3. **Choose today’s path:** Select **No proposal: review and learn** when there is no current proposal. **Review current proposal** appears only when this snapshot contains an unexpired proposal; if your phone and the dashboard disagree, stop and reconcile rather than bypassing the mismatch.
+4. **Follow that path:** With no proposal, review existing obligations and read a lesson; do not invent an entry. With a proposal, match its terms to the current phone request and approved policy; any decision remains in the existing phone workflow, not this checklist.
+5. **Confirm the outcome:** Compare broker evidence and the Engine log. Choose **Records agree / no new action** or **Waiting for broker evidence**; unclear or conflicting records belong on the stop path.
+6. **Close the review:** Record the setup or “no proposal,” decision, outcome, unresolved items and your next check in your existing journal. A pending broker outcome ends as **Review paused with follow-up open**, not as a completed reconciliation.
+
+At any step, **Something is unclear: stop here** pauses the workflow. Resolve the discrepancy and restart; the guide does not cancel existing orders, stop the engine, write a journal or create reminders.
+
+Checkmarks are your acknowledgments for this visit, not automated broker verification or trading permission. If the displayed evidence changes during a step, progression asks you to restart against the refreshed record; reloading also resets the checklist.
+
 ### Before a decision
 
 - **Environment:** Confirm Paper and the expected account.

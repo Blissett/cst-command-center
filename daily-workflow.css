@@ -1,0 +1,10 @@
+#daily-workflow{--section:#63b6df;max-width:100%;padding:24px}
+#daily-workflow h2{font-size:clamp(1.4rem,3vw,1.8rem);text-transform:none;letter-spacing:0;color:var(--text)}
+#daily-instruction{font-size:1.1rem;max-width:85ch;line-height:1.65}
+#daily-evidence p{margin:6px 0;overflow-wrap:anywhere}
+#daily-warning{color:var(--warn);line-height:1.6}
+.daily-check{display:flex;align-items:flex-start;gap:12px;margin:20px 0;padding:16px;background:var(--panel2);border:1px solid var(--line2);border-radius:8px}
+.daily-check input{width:20px;height:20px;flex:none;accent-color:var(--info)}
+#daily-workflow .tour-controls{max-width:none}
+.owner-title{flex-wrap:wrap}.owner-title>div{flex:1;min-width:220px}
+@media(max-width:760px){#daily-workflow{padding:16px}.owner-title>button{width:100%;margin-top:12px}#daily-workflow .section-nav{grid-template-columns:1fr}.daily-check{padding:12px}}
