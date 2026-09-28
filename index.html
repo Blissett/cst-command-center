@@ -173,11 +173,11 @@ body.plain #feedcard,body.plain #wealthcard{grid-column:span 6}
 body.plain .today .line{font-size:22px}
 body.plain .ring .word{font-size:22px}
 body.plain{font-size:15px}
-</style></head>
+</style><link rel="stylesheet" href="owner-guide.css"></head>
 <body>
 <header>
   <div class="logo"><svg viewBox="0 0 32 32" aria-label="CST"><rect width="32" height="32" rx="8" fill="#0f1a22" stroke="#2a3749"/><path d="M8 21 L14 13 L19 18 L24 10" stroke="#34d399" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="10" r="2.2" fill="#34d399"/></svg>
-  <span>CST <small>Family Command Center</small></span></div>
+  <span>CST <small>Owner Command Center</small></span></div>
   <span id="b-paper" class="pill good">Paper</span>
   <span id="b-engine" class="pill violet"><i class="dot still"></i><span>Engine</span></span>
   <span id="b-mkt" class="pill hide-xl">Market</span>
@@ -185,6 +185,7 @@ body.plain{font-size:15px}
   <span class="ticker hide-m"><span class="sym" id="t-sym">-</span><span class="px" id="t-px">-</span><span class="chg" id="t-chg"></span></span>
   <span class="clock hide-l" id="clock"></span>
   <span class="seg" role="group" aria-label="View"><button id="m-plain">Plain</button><button id="m-pro">Detailed</button></span>
+  <button id="theme-toggle" class="theme-toggle">Light mode</button>
   <span class="clock"><i id="pulse" class="dot" style="color:var(--warn)"></i> <span id="updated">connecting</span> · <button class="linkish" id="signout">sign out</button></span>
 </header>
 
@@ -241,10 +242,10 @@ body.plain{font-size:15px}
   </section>
 
   <section class="card s4 wealth" id="wealthcard">
-    <h2><span class="ic" style="background:var(--gold)">∞</span>Family wealth <span class="right">the long game</span></h2>
+    <h2><span class="ic" style="background:var(--gold)">∞</span>Long-term illustration <span class="right">not a Fidelity balance</span></h2>
     <div class="wtop">
       <div><div class="k">Paper equity</div><div class="big" id="w-eq">-</div></div>
-      <div><div class="k">Since record began</div><div class="v" id="w-since">-</div></div>
+      <div><div class="k">Displayed paper history</div><div class="v" id="w-since">-</div></div>
       <div><div class="k">Long-term lane</div><div class="v" id="w-lane">-</div></div>
     </div>
     <div class="heat" id="lt-heat" style="margin-top:14px"></div>
@@ -256,7 +257,7 @@ body.plain{font-size:15px}
     </div>
     <canvas id="wealthcv" height="120"></canvas>
     <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px"><span style="color:var(--muted)">put in <b id="c-in" style="color:var(--text)">-</b></span><span style="color:var(--muted)">could grow to <b id="c-out" style="color:var(--gold)">-</b></span></div>
-    <div class="disclaimer">An illustration of compounding, not a forecast. The growth number is yours to move; the system makes no prediction. The only real number on this card is the paper equity above.</div>
+    <div class="disclaimer">An illustration using displayed paper equity, not a forecast, a Fidelity balance or a contribution schedule. Moving a slider does not move money. Confirm the data timestamps before interpreting the starting value.</div>
   </section>
 
   <section class="card s4 pro" id="indcard">
@@ -544,4 +545,4 @@ $('l-done').onclick=()=>{ const n=String(L.lessons[li]?.n); if(done.has(n)) done
 renderLesson();
 window.addEventListener('resize',()=>{ if(D){ calc(); renderKpis(D,D.state||{},D.broker,D.positions||[],(D.pending||[]).filter(p=>!p.expired)); } });
 load();
-</script></body></html>
+</script><script src="orientation.js"></script><script src="owner-guide.js"></script></body></html>

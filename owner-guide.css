@@ -1,0 +1,59 @@
+:root{--text-xs:.86rem;--text-sm:1rem;--text-base:1.08rem;--text-xl:clamp(1.6rem,3vw,2.25rem);--bg:#05080e;--panel:#0a1019;--panel2:#111a27;--line:#1c293b;--line2:#293c53;--muted:#a5b5c9;--dim:#98a9bf}
+html{scroll-behavior:smooth;scroll-padding-top:120px}
+[hidden]{display:none!important}
+body{background:var(--bg);background-image:none}
+header{background:#080e18;border-bottom:1px solid #293c53}
+.card{--section:#659ce5;border-top:3px solid var(--section);background:color-mix(in srgb,var(--section) 4%,var(--panel));box-shadow:none}
+#focus,#chartcard{--section:#68acff}#signal,#learn,#owner-orientation{--section:#b69bff}#feedcard,#poscard,#kpicard{--section:#44d8be}#wealthcard{--section:#f3c260}#indcard{--section:#ff9d80}#syscard{--section:#8bb6d9}#today{--section:#68acff}
+.card h2{color:var(--section);font-size:var(--text-xs)}
+.card h2 .ic{color:#081426}
+.card p{line-height:1.65}
+.preview-banner{display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:12px 16px;color:var(--text);background:#101b2b;border:1px solid #344b69;border-radius:8px;font-size:var(--text-xs)}
+.preview-banner strong{color:#bed8ff;letter-spacing:.1em}.preview-banner a{margin-left:auto}
+.owner-start{--section:#669aff;padding:24px}
+.owner-title{display:flex;justify-content:space-between;align-items:center;gap:20px}
+.owner-title h1{font-size:var(--text-xl);margin:8px 0;font-weight:700;letter-spacing:-.03em}
+.owner-title p{color:var(--muted);margin:8px 0 0;font-size:var(--text-sm)}
+.eyebrow{font-size:var(--text-xs);font-weight:700;letter-spacing:.12em;color:var(--section,var(--info))}
+.section-nav{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 12px}
+.section-nav button,.tour-controls button,.theme-toggle{background:var(--panel2);border:1px solid var(--line2);border-radius:8px;padding:10px 14px;color:var(--text);font-size:var(--text-sm);min-height:42px}
+.section-nav button:nth-child(2){border-color:#668fbf}.section-nav button:nth-child(3){border-color:#328d7b}.section-nav button:nth-child(4){border-color:#9b7d40}.section-nav button:nth-child(5){border-color:#8062ac}
+button.primary{background:#173a66;border:1px solid #537caf;color:#f0f6ff;font-weight:700;padding:12px 20px;border-radius:8px;font-size:var(--text-sm);white-space:nowrap}
+button:hover{filter:brightness(1.12)}button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid var(--info);outline-offset:4px}
+.view-note{font-size:var(--text-xs);color:var(--muted);margin-bottom:0}
+#tour-panel{border-top:1px solid var(--line2);margin-top:20px;padding-top:20px;display:grid;grid-template-columns:1fr auto;gap:24px}
+#tour-title{text-transform:none;letter-spacing:0;color:var(--text);font-size:1.4rem;margin:8px 0}
+#tour-text{margin:0;max-width:76ch;color:var(--muted)}
+.tour-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;max-width:350px}
+.tour-target{outline:3px solid var(--section);outline-offset:5px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.return-tour{position:fixed;bottom:20px;right:20px;z-index:20;box-shadow:0 4px 24px #0008}
+.playbook-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.playbook-heading h2{font-size:1.6rem;letter-spacing:0;text-transform:none;margin:8px 0;color:var(--text)}
+.playbook-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:20px}
+details{background:var(--panel);border:1px solid var(--line2);border-radius:8px;padding:16px}
+summary{cursor:pointer;font-weight:700;color:var(--text);font-size:var(--text-sm)}
+li{padding:4px 0;color:var(--muted);line-height:1.55}
+.gap-note{background:color-mix(in srgb,var(--gold) 12%,var(--panel));border-left:3px solid var(--gold);padding:16px;margin-top:20px;color:var(--text);line-height:1.6}
+.hint-strip{font-size:var(--text-xs);color:var(--muted);border-bottom:1px solid var(--line2);padding-bottom:12px;margin-bottom:12px}
+.lesson .body{max-height:none;overflow:visible;color:var(--text);font-size:var(--text-sm)}
+#tip{background:var(--panel2)}
+.pill,.clock,.seg button,.card h2,.card h2 .right,.foot,.disclaimer,.t th,.t td,.facts .k,.facts .v,.legend,.tag,.mode{font-size:max(12px,.86rem)}
+.q{min-width:28px;min-height:28px}
+.plainfacts{color:var(--muted)}
+.t{table-layout:auto}.t td{overflow-wrap:anywhere}
+[data-theme="light"]{--bg:#eef3fa;--panel:#fff;--panel2:#e8eff8;--text:#182a40;--muted:#475b72;--dim:#52657b;--line:#c6d4e4;--line2:#b5c6da;--good:#087651;--bad:#ad2839;--warn:#855400;--info:#155da8;--violet:#6541a5;--gold:#88601c}
+[data-theme="light"] body{background:var(--bg)}
+[data-theme="light"] header{background:#e2ecfa}
+[data-theme="light"] .preview-banner{background:#dbe8fb;color:#182a40}
+[data-theme="light"] .preview-banner strong{color:#234c80}
+[data-theme="light"] .card{background:color-mix(in srgb,var(--section) 13%,white)}
+[data-theme="light"] .card h2,[data-theme="light"] .eyebrow{color:#294b70}
+[data-theme="light"] .ring .in{background:#edf1fa}
+[data-theme="light"] .range .bar,[data-theme="light"] .hrow .bar{background:#ced9e8}
+[data-theme="light"] .lnav button{color:var(--text);background:var(--panel)}
+[data-theme="light"] .pill.violet{color:#6541a5;border-color:#8d77b9}
+@media(max-width:900px){#tour-panel{grid-template-columns:1fr}.owner-title{align-items:flex-start}.tour-controls{max-width:none}}
+@media(max-width:760px){html{scroll-padding-top:24px}.owner-title{display:block}.owner-title .primary{margin-top:20px;width:100%}.owner-start{padding:20px 16px}.playbook-grid{grid-template-columns:1fr}.section-nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.section-nav button{text-align:left;padding:10px;font-size:13px}.preview-banner{gap:8px}.preview-banner a{margin-left:0}.today .line{font-size:20px!important}#sysgrid{grid-template-columns:1fr!important}.card h2{flex-wrap:wrap}.t{font-size:12px}.kpis{grid-template-columns:1fr 1fr}.return-tour{bottom:12px;right:12px}.logo small{font-size:10px}.logo{font-size:14px}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+@media(max-width:760px){.wtop{display:grid!important;grid-template-columns:1fr!important;gap:12px!important}.wtop>div{min-width:0}.sys .v{overflow-wrap:anywhere}.t td,.t th{font-size:12px;padding:6px 3px!important}}
