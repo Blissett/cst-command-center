@@ -327,7 +327,9 @@ const HELP={
  dist:['Distance from 20-day','How far price sits from its 20-day average, measured in ATRs. Between -1 and +1 counts as "near".'],
  verdict:['Verdict','What the engine decided at the last 3:17 PM scan for this symbol. It is not updated by live prices; only the next scan changes it.'],
  conditions:['N/3 conditions','Progress against the three written rules of the swing pullback strategy. Three of three means a setup exists under the rules. It is not a prediction and not a confidence score.'],
- risk:['Risk at stops','If every open stock position hit its stop right now, this is what the paper account would lose, as a share of equity. Low = under 1%.'],
+ risk:['Risk at stops','Estimate from sell stops the broker reports as working (new/accepted). A stop the broker reports as "held" is recorded but not counted as protection. Options spreads have no broker stop by design and are excluded. Low = under 1%.'],
+ gate:['Market gate','Two lights on SPY, read on settled closes only: above its 200-day average, and above its close 252 sessions ago. Both = RISK-ON (full size). Trend only = HALF. No trend = RISK-OFF. Nothing else on this page overrides it.'],
+ fresh:['Fresh / stale','Fresh means the last scan is the one expected for today and, during the session, a route tick ran within 90 minutes. Stale or unknown closes the decision slots on this page: read, do not act.'],
  chain:['Chain ok','Every ledger entry fingerprints the one before it. "ok" means nothing has been edited or removed since it was written.'],
 };
 let tipEl=$('tip');
@@ -338,6 +340,28 @@ document.addEventListener('pointerout',e=>{ if(e.target.closest('[data-help]')) 
 document.addEventListener('click',e=>{ const q=e.target.closest('[data-help]'); if(q){ const r=q.getBoundingClientRect(); showTip(q.dataset.help,r.left+r.width/2,r.bottom); setTimeout(hideTip,4000); } });
 const Q=key=>'<button class="q" data-help="'+key+'" aria-label="what is this">?</button>';
 
+// ---- freshness: the page's state machine (engine state schema 2; Review v2 fallback below) ----
+function engineEvidence(d, now=Date.now()){
+  const st=d.state||{};
+  if(st.chain?.ok===false) return {label:'HALT: CHAIN BROKEN',tone:'bad',ready:false,reasons:['ledger chain did not verify']};
+  if(st.freshness&&st.schema>=2){
+    const f=st.freshness, next=Date.parse(st.next_run?.at);
+    // the engine's verdict was true when it published; it goes stale here only when the run it promised is 90 min overdue
+    if(f.status==='fresh'&&Number.isFinite(next)&&now>next+90*60000) return {label:'ENGINE STALE',tone:'warn',ready:false,reasons:['the '+(st.next_run.job||'next')+' run due '+tCT(st.next_run.at,{weekday:'short',hour:'numeric',minute:'2-digit'})+' CT has not published ('+Math.round((now-next)/60000)+' min overdue)']};
+    if(f.status==='fresh') return {label:'ENGINE FRESH',tone:'good',ready:true,reasons:[]};
+    if(f.status==='stale') return {label:'ENGINE STALE',tone:'warn',ready:false,reasons:f.reasons||[]};
+    return {label:'ENGINE STATUS UNKNOWN',tone:'warn',ready:false,reasons:f.reasons||[]};
+  }
+  const next=Date.parse(st.next_run?.at), published=Date.parse(d.state_published_at||st.published_at);
+  if(st.chain?.ok!==true||!Number.isFinite(published)||published>now||!Number.isFinite(next)||next<=published)
+    return {label:'ENGINE STATUS UNKNOWN',tone:'warn',ready:false,reasons:['no freshness verdict in state (engine older than schema 2)']};
+  if(now>next+90*60000) return {label:'ENGINE STALE',tone:'warn',ready:false,reasons:['scheduled run '+Math.round((now-next)/60000)+' min overdue']};
+  return {label:'ENGINE RUNNING',tone:'good',ready:true,reasons:[]};
+}
+function gateText(st){ const g=st.gate; if(!g||g.status!=='ok') return {label:'UNKNOWN',sub:g&&g.reason?g.reason:'no gate in state',tone:'warn'};
+  const pct=v=>Number.isFinite(v)?(v>=0?'+':'')+v.toFixed(1)+'%':'-';
+  return {label:g.label,sub:'SPY '+fmtN(g.close)+' vs 200-day '+fmtN(g.sma200)+' ('+pct(g.distance_pct)+') · year '+pct(g.year_pct)+' · as of '+g.as_of,tone:g.factor===1?'good':g.factor===0.5?'warn':'bad'}; }
+function protectionPhrase(st){ const sp=st.positions; if(!sp||sp.status!=='ok') return ' (stop status not in state)'; const u=sp.unverified_positions||0; return u?', '+u+' WITHOUT a working stop':', every stock stop verified working at the broker'; }
 // ---- gate ----
 function showGate(msg){ $('gate').hidden=false; $('main').hidden=true; $('gate-err').textContent=msg||''; }
 $('go').onclick=()=>{ token=$('tok').value.trim(); if(!token) return; store.set('cst_view_token',token); load(); };
@@ -372,18 +396,21 @@ function render(){
   const live=(st.paper===false||(b&&b.paper===false));
   $('b-paper').textContent=live?'LIVE':'Paper'; $('b-paper').className='pill '+(live?'bad':'good');
   const chainOk=!st.chain||st.chain.ok!==false;
-  $('b-engine').innerHTML='<i class="dot'+(chainOk?'':' still')+'"></i><span>'+(chainOk?'Engine online · next '+(st.next_run?tCT(st.next_run.at,{weekday:'short',hour:'numeric',minute:'2-digit'}):'-'):'ENGINE HALT')+'</span>'; $('b-engine').className='pill '+(chainOk?'violet':'bad');
+  const ev=engineEvidence(d), gt=gateText(st);
+  $('b-engine').innerHTML='<i class="dot'+(ev.ready?'':' still')+'"></i><span>'+(chainOk?ev.label+' · gate '+gt.label:'ENGINE HALT')+'</span>'; $('b-engine').className='pill '+(!chainOk?'bad':ev.ready?'violet':'warn');
   $('b-mkt').textContent=clk?(clk.is_open?'Market open · closes '+tCT(clk.next_close):'Market closed · opens '+dCT(clk.next_open)):'Market -'; $('b-mkt').className='pill hide-xl '+(clk&&clk.is_open?'good':'');
   const fq=m[focus]||{}; $('t-sym').textContent=focus; $('t-px').textContent=fmtN(fq.price); $('t-chg').textContent=fmtPct(fq.change_pct); $('t-chg').className='chg '+sign(fq.change_pct||0);
   // today
-  let line='',sub='',tone='good',badge='All clear';
+  let line='',sub='',tone='good',badge='All clear',phoneOk=true;
   if(!chainOk){ line='Stop. The record failed its integrity check.'; sub='Do not act on anything here. Tell your assistant; nothing else should run until this is understood.'; tone='bad'; badge='Stop'; }
+  else if(!ev.ready){ line='Read, do not act: the engine\'s evidence is '+(ev.label.indexOf('UNKNOWN')>=0?'unknown':'stale')+'.'; sub=(ev.reasons||[]).join('; ')+'.'+(pend.length?' '+pend.length+' proposal'+(pend.length>1?'s':'')+' waiting on the phone from the last completed scan.':'')+' Gate '+gt.label+' ('+gt.sub+').'; tone='warn'; badge='Stale'; phoneOk=false; }
+  else if(st.positions&&st.positions.status==='ok'&&(st.positions.unverified_positions||0)>0){ const bad=(st.positions.items||[]).filter(i=>!i.stop_verified&&i.asset_class!=='option'); line=(bad.length===1?'One position has no working stop at the broker.':bad.length+' positions have no working stop at the broker.'); sub=bad.map(i=>i.symbol+' x'+i.quantity+': '+(i.stop_status?'stop '+i.stop_status:'no stop')+(i.stop_price?' at '+fmtN(i.stop_price):'')).join('; ')+'. Confirm the stop in the broker app before anything else today.'+(pend.length?' '+pend.length+' proposal'+(pend.length>1?'s':'')+' also waiting on the phone.':''); tone='warn'; badge='Check stop'; }
   else if(pend.length){ const p=pend[0]; const what=p.asset_class==='option'?(p.quantity+' '+p.symbol+' call spread'+(p.legs&&p.legs.length?' ('+p.legs.map(l=>l.occ_symbol||'').join(' / ').replace(/[A-Z]+(\d{6})([CP])(\d{8})/g,(s,dt,cp,k)=>'$'+(parseInt(k,10)/1000))+')':'')):(p.quantity+' shares of '+p.symbol);
     line=(pend.length===1?'One proposal is waiting for your decision.':pend.length+' proposals are waiting for your decision.');
     sub=p.side.toUpperCase()+' '+what+(p.limit_price?' at '+p.limit_price:'')+(p.stop_price?', stop '+p.stop_price:'')+'. Most you can lose: '+fmt$(p.est_max_loss,0)+'. Expires '+dCT(p.expires_at)+' CT. Approve or Decline on the phone alert; either answer counts.'; tone='warn'; badge='Needs you'; }
-  else if(clk&&clk.is_open){ line='Nothing needs you. The market is open and the engine is watching.'; sub=pos.length?(pos.length+' paper position'+(pos.length>1?'s':'')+' open, protected by broker-side stops where the lane requires them. Next check-in: '+(st.next_run?dCT(st.next_run.at):'-')+' CT.'):'No open positions. The daily scan runs at 3:17 PM CT.'; }
+  else if(clk&&clk.is_open){ line='Nothing needs you. The market is open and the engine is watching.'; sub=pos.length?(pos.length+' paper position'+(pos.length>1?'s':'')+' open'+protectionPhrase(st)+'. Gate '+gt.label+'. Next check-in: '+(st.next_run?dCT(st.next_run.at):'-')+' CT.'):'No open positions. The daily scan runs at 3:17 PM CT.'; }
   else { line='Nothing to do right now.'; sub='Market closed. Next: '+(st.next_run?st.next_run.label.split(':')[0].toLowerCase()+' at '+dCT(st.next_run.at)+' CT':'-')+(st.period&&st.period.starts&&!st.period.active?'. Day 1 of the official record is '+new Date(st.period.starts+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'})+'.':st.period&&st.period.active?'. The official record is running.':'.'); }
-  $('today').className='card today s12 '+tone; $('today-badge').textContent=badge; $('today-line').textContent=line; $('today-sub').textContent=sub; $('today-phone').hidden=!pend.length;
+  $('today').className='card today s12 '+tone; $('today-badge').textContent=badge; $('today-line').textContent=line; $('today-sub').textContent=sub; $('today-phone').hidden=!pend.length||!phoneOk;
   // focus chips
   $('chips').innerHTML=watch.map(s=>{ const q=m[s]||{}; return '<button class="chip'+(s===focus?' on':'')+'" data-sym="'+s+'"><i class="'+sign(q.change_pct||0)+'"></i>'+s+'</button>'; }).join('');
   $('chips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{ focus=c.dataset.sym; store.set('cst_focus',focus); render(); });
@@ -512,15 +539,23 @@ function renderKpis(d,st,b,pos,pend){
   $('k-eq').textContent=fmt$(b?.equity,0); $('k-eq-s').textContent=b?'cash '+fmt$(b.cash,0)+' · buying power '+fmt$(b.buying_power,0):'broker data unavailable'; spark('k-eq-cv',curve,curve.length>1&&curve[curve.length-1]>=curve[0]?'#34d399':'#f87171');
   const winners=pos.filter(p=>p.unrealized_pl>0).length; $('k-pos').textContent=pos.length; $('k-pos-s').textContent=pos.length?winners+' up · '+(pos.length-winners)+' down · '+(d.orders||[]).length+' resting':(d.orders||[]).length+' resting order'+((d.orders||[]).length===1?'':'s')+' waiting at the broker';
   const day=b?.day_pl; $('k-day').textContent=day==null?'-':(day>=0?'+':'')+fmt$(day,0); $('k-day').className='v num '+sign(day||0); $('k-day-s').textContent=b?fmtPct(b.day_pl_pct)+' today (paper)':''; spark('k-day-cv',curve.slice(-12),day>=0?'#34d399':'#f87171');
-  let risk=0; pos.forEach(p=>{ if(p.stop&&p.price&&p.qty>0) risk+=Math.max(0,(p.price-p.stop))*p.qty; }); const rp=b?.equity?risk/b.equity:0; const lvl=pos.length===0?['NONE','var(--muted)','no open positions']:rp<0.01?['LOW','var(--good)','stops would cost '+fmt$(risk,0)]:rp<0.03?['MODERATE','var(--warn)','stops would cost '+fmt$(risk,0)]:['HIGH','var(--bad)','stops would cost '+fmt$(risk,0)];
-  $('k-risk').textContent=lvl[0]; $('k-risk').style.color=lvl[1]; $('k-risk-s').innerHTML=lvl[2]+' · '+(rp*100).toFixed(2)+'% of equity '+Q('risk');
-  const chainOk=!st.chain||st.chain.ok!==false; $('k-sys').innerHTML=chainOk?'<span class="ok">● ENGINE RUNNING</span>':'<span class="no">● HALT: CHAIN BROKEN</span>'; $('k-sys-s').innerHTML=(st.chain?'chain ok · '+st.chain.events+' events ':'')+Q('chain')+' · next '+(st.next_run?tCT(st.next_run.at,{weekday:'short',hour:'numeric',minute:'2-digit'}):'-')+(pend.length?' · <span style="color:var(--warn)">'+pend.length+' waiting on you</span>':'');
+  const sp=st.positions&&st.positions.status==='ok'?st.positions:null;
+  let risk=0, unverified=0, verifiedOnly=false;
+  if(sp){ risk=sp.verified_risk||0; unverified=sp.unverified_positions||0; verifiedOnly=true; }
+  else pos.forEach(p=>{ if(p.stop&&p.price&&p.qty>0) risk+=Math.max(0,(p.price-p.stop))*p.qty; });
+  const rp=b?.equity?risk/b.equity:0;
+  const lvl=pos.length===0?['NONE','var(--muted)','no open positions']:unverified>0?['UNKNOWN','var(--warn)',unverified+' position'+(unverified>1?'s':'')+' without a working stop · verified stops would cost '+fmt$(risk,0)]:rp<0.01?['LOW','var(--good)','verified stops would cost '+fmt$(risk,0)]:rp<0.03?['MODERATE','var(--warn)','verified stops would cost '+fmt$(risk,0)]:['HIGH','var(--bad)','verified stops would cost '+fmt$(risk,0)];
+  $('k-risk').textContent=lvl[0]; $('k-risk').style.color=lvl[1]; $('k-risk-s').innerHTML=lvl[2]+' · '+(rp*100).toFixed(2)+'% of equity'+(verifiedOnly?'':' (estimate, stop status unknown)')+' '+Q('risk');
+  const chainOk=!st.chain||st.chain.ok!==false; const ev=engineEvidence(d), gt=gateText(st);
+  $('k-sys').innerHTML=!chainOk?'<span class="no">● HALT: CHAIN BROKEN</span>':'<span class="'+(ev.ready?'ok':'no')+'">● '+ev.label+'</span>'; $('k-sys-s').innerHTML='gate <b>'+gt.label+'</b> '+Q('gate')+' · '+(st.chain?'chain ok · '+st.chain.events+' events ':'')+Q('chain')+' '+Q('fresh')+' · next '+(st.next_run?tCT(st.next_run.at,{weekday:'short',hour:'numeric',minute:'2-digit'}):'-')+(pend.length?' · <span style="color:var(--warn)">'+pend.length+' waiting on you</span>':'');
 }
 // ---- positions ----
 function renderPositions(d){
   const pos=d.positions||[], ords=d.orders||[]; let h='';
-  if(pos.length){ h+='<table class="t"><tr><th>Position</th><th class="r">Qty</th><th class="r">Avg</th><th class="r">Last</th><th class="r">Unrealized</th><th class="r">Stop / target</th></tr>';
-    pos.forEach(p=>{ h+='<tr><td><b>'+esc(p.symbol)+'</b>'+(p.asset_class==='us_option'?' <span class="tag">option</span>':'')+'</td><td class="r num">'+p.qty+'</td><td class="r num">'+fmtN(p.avg)+'</td><td class="r num">'+fmtN(p.price)+'</td><td class="r num '+sign(p.unrealized_pl)+'">'+(p.unrealized_pl>=0?'+':'')+fmt$(p.unrealized_pl,2)+' <span style="color:var(--dim)">'+fmtPct(p.unrealized_plpc)+'</span></td><td class="r num">'+fmtN(p.stop)+' / '+fmtN(p.target)+'</td></tr>'; }); h+='</table>'; }
+  if(pos.length){ h+='<table class="t"><tr><th>Position</th><th class="r">Qty</th><th class="r">Avg</th><th class="r">Last</th><th class="r">Unrealized</th><th class="r">Stop / target</th><th>Stop status</th></tr>';
+    const sv={}; ((d.state||{}).positions?.items||[]).forEach(i=>{ sv[i.symbol]=i; });
+    pos.forEach(p=>{ const v=sv[p.symbol]; const stopCell=!v?'<span style="color:var(--dim)">not in state</span>':v.asset_class==='option'?'<span style="color:var(--dim)">rule-managed</span>':v.stop_verified?'<span class="ok">working</span>':'<span class="no">'+esc(v.stop_status||'none')+'</span>';
+      h+='<tr><td><b>'+esc(p.symbol)+'</b>'+(p.asset_class==='us_option'?' <span class="tag">option</span>':'')+'</td><td class="r num">'+p.qty+'</td><td class="r num">'+fmtN(p.avg)+'</td><td class="r num">'+fmtN(p.price)+'</td><td class="r num '+sign(p.unrealized_pl)+'">'+(p.unrealized_pl>=0?'+':'')+fmt$(p.unrealized_pl,2)+' <span style="color:var(--dim)">'+fmtPct(p.unrealized_plpc)+'</span></td><td class="r num">'+fmtN(p.stop)+' / '+fmtN(p.target)+'</td><td>'+stopCell+'</td></tr>'; }); h+='</table>'; }
   else h+='<div class="empty">No open paper positions.</div>';
   if(ords.length){ h+='<h2 style="margin-top:12px">Resting orders <span class="right">waiting at the broker</span></h2><table class="t"><tr><th>Order</th><th class="r">Qty</th><th class="r">Limit</th><th class="r">Stop / target</th><th>Since</th></tr>';
     ords.forEach(o=>{ h+='<tr><td>'+esc(o.side.toUpperCase())+' <b>'+esc(o.symbol)+'</b> <span class="tag">'+esc(o.order_class||o.type)+'</span></td><td class="r num">'+o.qty+'</td><td class="r num">'+fmtN(o.limit)+'</td><td class="r num">'+fmtN(o.stop)+' / '+fmtN(o.target)+'</td><td class="num" style="color:var(--dim)">'+dCT(o.submitted_at)+'</td></tr>'; }); h+='</table>'; }
@@ -529,7 +564,7 @@ function renderPositions(d){
 // ---- system ----
 function renderSystem(d,st,b){
   const nr=st.next_run||{};
-  $('sys-kv').innerHTML=[['Ledger account',st.account_id],['Broker',(st.broker||'-')+(st.paper?' · paper':'')+(b?.account_number?' · '+b.account_number:'')],['Record',st.chain?(st.chain.ok?'<span class="ok">chain ok</span> · '+st.chain.events+' events':'<span class="no">BROKEN at '+st.chain.first_bad+'</span>'):'-'],['Verified',st.chain?dCT(st.chain.verified_at):'-'],['Last scan',st.last_scan?dCT(st.last_scan.created_at)+' · '+esc((st.last_scan.text||'').replace(/^scan at [^:]+: /,'')):'-'],['Next run',nr.at?dCT(nr.at)+' · '+esc(nr.label):'-'],['Period',st.period?(st.period.active?'RUNNING · ':'starts ')+(st.period.starts||'')+' · rules '+(st.period.rules_version||'-'):'-'],['Live lock',(st.live_flag||st.live_armed)?'<span class="no">CHECK: a live setting is on</span>':'<span class="ok">off (flag off, not armed)</span>'],['Alerts',st.alerts_wired?'wired to phone':'<span class="no">not wired</span>'],['Code',st.code_version],['State published',dCT(d.state_published_at)]]
+  $('sys-kv').innerHTML=[['Ledger account',st.account_id],['Broker',(st.broker||'-')+(st.paper?' · paper':'')+(b?.account_number?' · '+b.account_number:'')],['Record',st.chain?(st.chain.ok?'<span class="ok">chain ok</span> · '+st.chain.events+' events':'<span class="no">BROKEN at '+st.chain.first_bad+'</span>'):'-'],['Verified',st.chain?dCT(st.chain.verified_at):'-'],['Last scan',st.last_scan?dCT(st.last_scan.created_at)+' · '+esc((st.last_scan.text||'').replace(/^scan at [^:]+: /,'')):'-'],['Last route',st.heartbeat?.route_done?dCT(st.heartbeat.route_done.created_at):'-'],['Freshness',st.freshness?esc(st.freshness.status)+(st.freshness.reasons&&st.freshness.reasons.length?' · '+esc(st.freshness.reasons.join('; ')):''):'-'],['Gate',(st.gate&&st.gate.status==='ok')?esc(st.gate.label)+' · '+esc(gateText(st).sub):'-'],['Next run',nr.at?dCT(nr.at)+' · '+esc(nr.label):'-'],['Period',st.period?(st.period.active?'RUNNING · ':'starts ')+(st.period.starts||'')+' · rules '+(st.period.rules_version||'-'):'-'],['Live lock',(st.live_flag||st.live_armed)?'<span class="no">CHECK: a live setting is on</span>':'<span class="ok">off (flag off, not armed)</span>'],['Alerts',st.alerts_wired?'wired to phone':'<span class="no">not wired</span>'],['Code',st.code_version],['State published',dCT(d.state_published_at)]]
     .map(([k,v])=>'<span class="k">'+k+'</span><span class="v">'+(v??'-')+'</span>').join('');
   const lanes=st.lanes||{}; const strat=st.strategies||[];
   $('lanes').innerHTML='<tr><th>Lane</th><th>Mode</th><th class="r">Risk/trade</th><th>Strategies</th></tr>'+Object.keys(lanes).map(k=>'<tr><td style="white-space:nowrap;font-weight:600">'+k.replace('_',' ')+'</td><td><span class="mode '+lanes[k].mode+'">'+lanes[k].mode.replace('_',' ')+'</span></td><td class="r num">'+(lanes[k].risk_per_trade_pct*100).toFixed(2)+'%</td><td style="color:var(--muted)">'+strat.filter(s=>s.lane===k).map(s=>s.name+(s.mode!==lanes[k].mode?' <span class="mode '+s.mode+'">'+s.mode.replace('_',' ')+'</span>':'')).join('<br>')+'</td></tr>').join('');
